@@ -139,7 +139,40 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 // associate a given bounding box with the keypoints it contains
 void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
 {
-    // keypoints and keypoint matches are already appended to the vector in the function `matchBoundingBoxes`
+    // In this implementation, keypoints and keypoint matches are already appended to the vector in the function `matchBoundingBoxes`
+    // Therefore, this function only conducts an outlier filtering
+    std::vector<double> distances;
+
+    for (auto it = boundingBox.kptMatches.begin(); it != boundingBox.kptMatches.end(); ++it)
+    {
+        cv::KeyPoint kptCurr = kptsCurr.at(it->trainIdx);
+        cv::KeyPoint kptPrev = kptsPrev.at(it->queryIdx);
+
+        double dist = cv::norm(kptCurr.pt - kptPrev.pt);
+        distances.push_back(dist);
+    }
+
+    std::sort(distances.begin(), distances.end());
+    long medIndex = floor(distances.size() / 2.0);
+    double medDist = distances.size() % 2 == 0 ? (distances[medIndex - 1] + distances[medIndex]) / 2.0 : distances[medIndex];
+    double tolRate = 3.0;
+
+    for (auto it = boundingBox.kptMatches.begin(); it != boundingBox.kptMatches.end(); ++it)
+    {
+        cv::KeyPoint kptCurr = kptsCurr.at(it->trainIdx);
+        cv::KeyPoint kptPrev = kptsPrev.at(it->queryIdx);
+
+        double dist = cv::norm(kptCurr.pt - kptPrev.pt);
+        if (abs(dist - medDist) > tolRate * medDist)
+        {
+            cout << "Median: " << medDist << ", distance: " << dist << ", filtered" << endl;
+            boundingBox.kptMatches.erase(it--);
+        }
+        else
+        {
+            boundingBox.keypoints.push_back(kptCurr);
+        }
+    }
 }
 
 
@@ -238,7 +271,7 @@ void matchBoundingBoxes(std::vector<cv::DMatch> &matches, std::map<int, int> &bb
 
             if (it_curr->roi.contains(kpt_curr.pt))
             {
-                it_curr->keypoints.push_back(kpt_curr);
+                // it_curr->keypoints.push_back(kpt_curr);
                 it_curr->kptMatches.push_back(*it_match);
             }
         }
