@@ -160,5 +160,52 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
 
 void matchBoundingBoxes(std::vector<cv::DMatch> &matches, std::map<int, int> &bbBestMatches, DataFrame &prevFrame, DataFrame &currFrame)
 {
-    // ...
+
+    for (auto it_curr = currFrame.boundingBoxes.begin(); it_curr != currFrame.boundingBoxes.end(); ++it_curr)
+    {
+
+        for (auto it_match = matches.begin(); it_match != matches.end(); ++it_match)
+        {
+            // queryIdx for source (previous frame), trainIdx for reference (current frame)
+            cv::KeyPoint kpt_curr = currFrame.keypoints.at(it_match->trainIdx);
+
+            if (it_curr->roi.contains(kpt_curr.pt))
+            {
+                it_curr->keypoints.push_back(kpt_curr);
+                it_curr->kptMatches.push_back(*it_match);
+            }
+        }
+
+        int max_matched_num = 0;
+        int matched_prev_id = 1e8;
+
+        // Loop over all *previous* bounding boxes
+        for (auto it_prev = prevFrame.boundingBoxes.begin(); it_prev != prevFrame.boundingBoxes.end(); ++it_prev)
+        {
+            int matched_num = 0;
+            // Loop over all matches inside *current* bounding box
+            for (auto it_match = it_curr->kptMatches.begin(); it_match != it_curr->kptMatches.end(); ++it_match)
+            {
+                cv::KeyPoint kpt_prev = prevFrame.keypoints.at(it_match->queryIdx);
+                if (it_prev->roi.contains(kpt_prev.pt))
+                {
+                    matched_num++;
+                }
+            }
+
+            if (matched_num > max_matched_num)
+            {
+                max_matched_num = matched_num;
+                matched_prev_id = it_prev->boxID;
+            }
+        }
+
+        // Matched successfully
+        if (matched_prev_id < 1e8)
+        {
+            // Todo: first current, second previous?
+            bbBestMatches.insert(std::pair<int, int>(matched_prev_id, it_curr->boxID));
+        }
+    }
+
 }

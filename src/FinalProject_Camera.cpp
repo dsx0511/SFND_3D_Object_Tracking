@@ -239,6 +239,11 @@ int main(int argc, const char *argv[])
             // store matches in current data frame
             (dataBuffer.end()-1)->bbMatches = bbBestMatches;
 
+            // for (pair<int, int> match : bbBestMatches)
+            // {
+            //     cout << "previous: " << match.first << ", current: " << match.second << endl;
+            // }
+
             cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << endl;
 
 
