@@ -139,7 +139,7 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 // associate a given bounding box with the keypoints it contains
 void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
 {
-    // ...
+    // keypoints and keypoint matches are already appended to the vector in the function `matchBoundingBoxes`
 }
 
 
@@ -154,7 +154,74 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC)
 {
-    // ...
+    // auxiliary variables
+    double dT = 1.0 / frameRate;        // time between two measurements in seconds
+    double laneWidth = 4.0;             // assumed width of the ego lane
+
+    double num_sigma = 0.3;
+    double minXPrev = 1e9, minXCurr = 1e9;
+
+    // previous frame
+    std::vector<double> xPrev;
+    for (auto it = lidarPointsPrev.begin(); it != lidarPointsPrev.end(); ++it)
+    {
+        xPrev.push_back(it->x);
+    }
+
+    double meanPrev = accumulate(xPrev.begin(), xPrev.end(), 0.0) / xPrev.size();
+    auto add_square_prev = [meanPrev](double sum, int i)
+    {
+        auto d = i - meanPrev;
+        return sum + d*d;
+    };
+    double totalPrev = accumulate(xPrev.begin(), xPrev.end(), 0.0, add_square_prev);
+    double variancePrev = sqrt(totalPrev / xPrev.size());
+
+    // cout << "mean: " << meanPrev << ", variance: " << variancePrev << endl;
+
+    for (auto it = lidarPointsPrev.begin(); it != lidarPointsPrev.end(); ++it)
+    {
+        
+        if ((abs(it->y) <= laneWidth / 2.0) && (abs(it->x - meanPrev) <= num_sigma * variancePrev))
+        { // 3D point within ego lane? within 3 sigma?
+            minXPrev = minXPrev > it->x ? it->x : minXPrev;
+        }
+    }
+
+    // cout << "minXPrev: " << minXPrev << endl;
+
+    // // current frame
+    std::vector<double> xCurr;
+    for (auto it = lidarPointsCurr.begin(); it != lidarPointsCurr.end(); ++it)
+    {
+        xCurr.push_back(it->x);
+    }
+
+    double meanCurr = accumulate(xCurr.begin(), xCurr.end(), 0.0) / xCurr.size();
+    auto add_square_curr = [meanCurr](double sum, int i)
+    {
+        auto d = i - meanCurr;
+        return sum + d*d;
+    };
+    double totalCurr = accumulate(xCurr.begin(), xCurr.end(), 0.0, add_square_curr);
+    double varianceCurr = sqrt(totalCurr / xCurr.size());
+
+    // cout << "mean: " << meanCurr << ", variance: " << varianceCurr << endl;
+
+    for (auto it = lidarPointsCurr.begin(); it != lidarPointsCurr.end(); ++it)
+    {
+        
+        if ((abs(it->y) <= laneWidth / 2.0) && (abs(it->x - meanCurr) <= num_sigma * varianceCurr))
+        { // 3D point within ego lane? within 3 sigma?
+            minXCurr = minXCurr > it->x ? it->x : minXCurr;
+        }
+    }
+
+    // cout << "minXCurr: " << minXCurr << endl;
+
+    // compute TTC from both measurements
+    TTC = minXCurr * dT / (minXPrev - minXCurr);
+
 }
 
 
