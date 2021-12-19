@@ -165,7 +165,7 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint
         double dist = cv::norm(kptCurr.pt - kptPrev.pt);
         if (abs(dist - medDist) > tolRate * medDist)
         {
-            cout << "Median: " << medDist << ", distance: " << dist << ", filtered" << endl;
+            // cout << "Median: " << medDist << ", distance: " << dist << ", filtered" << endl;
             boundingBox.kptMatches.erase(it--);
         }
         else
@@ -189,7 +189,7 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
         cv::KeyPoint kpOuterCurr = kptsCurr.at(it1->trainIdx);
         cv::KeyPoint kpOuterPrev = kptsPrev.at(it1->queryIdx);
 
-        for (auto it2 = kptMatches.begin() + 1; it2 != kptMatches.end(); ++it2)
+        for (auto it2 = it1 + 1; it2 != kptMatches.end(); ++it2)
         { // inner kpt.-loop
 
             double minDist = 100.0; // min. required distance
