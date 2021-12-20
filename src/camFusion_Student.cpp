@@ -8,6 +8,8 @@
 #include "camFusion.hpp"
 #include "dataStructures.h"
 
+#include <iomanip> 
+
 using namespace std;
 
 
@@ -66,7 +68,7 @@ void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<Li
 * However, you can make this function work for other sizes too.
 * For instance, to use a 1000x1000 size, adjusting the text positions by dividing them by 2.
 */
-void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, cv::Size imageSize, bool bWait)
+void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, cv::Size imageSize, size_t imgIdx, bool bWait)
 {
     // create topview image
     cv::Mat topviewImg(imageSize, CV_8UC3, cv::Scalar(255, 255, 255));
@@ -125,6 +127,11 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 
     // display image
     string windowName = "3D Objects";
+    // ostringstream imgNumber;
+    // imgNumber << setfill('0') << setw(2) << imgIdx;
+    // string imgFilename = "../images/results/BEV/" + imgNumber.str() + ".png";
+    // cv::imwrite(imgFilename, topviewImg);
+
     cv::namedWindow(windowName, 1);
     cv::resize(topviewImg, topviewImg, cv::Size(1000, 1000));
     cv::imshow(windowName, topviewImg);
@@ -294,6 +301,7 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
     }
 
     // cout << "minXCurr: " << minXCurr << endl;
+    // cout << "delta distance: " << minXPrev - minXCurr << endl;
 
     // compute TTC from both measurements
     TTC = minXCurr * dT / (minXPrev - minXCurr);

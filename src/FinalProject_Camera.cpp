@@ -87,6 +87,9 @@ int main(int argc, const char *argv[])
     bool bVis = VIS_RESULTS;            // visualize results
 
     /* MAIN LOOP OVER ALL IMAGES */
+    // std::ofstream myfile;
+    // myfile.open("../final_report/FP_6/ORB.csv", fstream::app);
+    // myfile << DETECTOR_TYPE << "," << DESCRIPTOR_TYPE << ",";
 
     for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex+=imgStepWidth)
     {
@@ -144,7 +147,7 @@ int main(int argc, const char *argv[])
         bVis = true;
         if(bVis)
         {
-            show3DObjects((dataBuffer.end()-1)->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000), true);
+            show3DObjects((dataBuffer.end()-1)->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000), imgIndex, true);
         }
         bVis = false;
 
@@ -287,6 +290,11 @@ int main(int argc, const char *argv[])
                     computeTTCCamera((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints, currBB->kptMatches, sensorFrameRate, ttcCamera);
                     //// EOF STUDENT ASSIGNMENT
 
+                    // cout << "TTC Lidar: " << ttcLidar << endl;
+                    // cout << "TTC camera: " << ttcCamera << endl;
+
+                    // myfile << ttcCamera << ",";
+
                     bVis = true;
                     if (bVis)
                     {
@@ -299,6 +307,12 @@ int main(int argc, const char *argv[])
                         putText(visImg, str, cv::Point2f(80, 50), cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0,0,255));
 
                         string windowName = "Final Results : TTC";
+
+                        // ostringstream imgNumber;
+                        // imgNumber << setfill('0') << setw(2) << imgIndex;
+                        // string imgFilename = "../images/results/TTC/" + imgNumber.str() + ".png";
+                        // cv::imwrite(imgFilename, visImg);
+
                         cv::namedWindow(windowName, 4);
                         cv::imshow(windowName, visImg);
                         cout << "Press key to continue to next frame" << endl;
@@ -312,6 +326,9 @@ int main(int argc, const char *argv[])
         }
 
     } // eof loop over all images
+
+    // myfile << "\n";
+    // myfile.close();
 
     return 0;
 }
