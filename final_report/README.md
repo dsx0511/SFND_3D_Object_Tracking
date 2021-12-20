@@ -1,5 +1,17 @@
 # Final Report
 
+## FP.1 Match 3D Objects
+The algorithm start looping over all bounding boxes in the current frame. For every bounding box in current frame, it first loops over all matched keypoint pairs. If the keypoint in current frame lies in this bounding box, the matching `cv::DMatch` is appended to this bounding box in `BoundingBox::kptMatches`. After finding all matchings with current keypoint lies in this box, it loops over all bounding boxes in the previous frame, and calculates the number of matched keypoints tha lies in every bounding box in the previous frame. The bounding box in the previous frame with most matched keypoints is marked as a matching of the bounding box in the current frame. This procedure is repeated for all remaining bounding boxes in the current frame.
+
+## FP.2 Compute Lidar-based TTC
+The Lidar TTC is computed with the same way as in the exercise of lesson 3 using the formula `TTC = minXCurr * dT / (minXPrev - minXCurr)`. For the statistical robustness, the mean $\mu$ and variance $\sigma$ of the distribution in x-axis is calculated. After that, the nearest point in x-direction within $\alpha*\sigma$ is considered as nearest point, where $\alpha$ is a hyperparameter. Points outside this range are considered as outliers.
+
+## FP.3 Associate Keypoint Correspondences with Bounding Boxes
+In this implementation, keypoints and keypoint matches are already appended to the vector `BoundingBox::kptMatches` in the function `matchBoundingBoxes`. Therefore, the function `clusterKptMatchesWithROI` only conducts an outlier filtering. To address the outliers, a check is performed in this function. It calculates the median of distances between matched keypoints in both frames $\tilde{x}$ and defines a tolerance rate $t$. If the distance of a matching is out of the range $[\tilde{x}-t, \tilde{x}+t]$, this matching is removed.
+
+## FP.4 Compute Camera-based TTC
+The Camera TTC is computed with the same way as in the exercise of lesson 3 using the formula `TTC = -dT / (1 - medDistRatio)`. It calculates the distance between every keypoint pair in the current as well as the distance between both matched keypoints in the previous frame. The distance ratios are recorded in a vector. After looping over all pairs, the median of all distance ratios is used to calculate the camera TTC.
+
 ## FP.5 Performance Evaluation 1
 
 The tables below show a sequence of images with TTC estimation and its corresponding Lidar points in BEV, where an implausible Lidar TTC estimation was observed. The TTC Lidar in this sequence shows a very strong fluctuation of TTC between 9.34s and 34.34s, whereas the sequence is only 0.4s long and no rapid acceleration is observed. This can be attributed to the constant velocity model, where only the distance difference between current and previous frame is considered. In the real world scenario with complex combination between acceleration and brake degree, the constant velocity model is not able to fit this motion and causes the instability of TTC.
